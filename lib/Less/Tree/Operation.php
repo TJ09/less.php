@@ -30,7 +30,7 @@ class Less_Tree_Operation extends Less_Tree {
 		$a = $this->operands[0]->compile( $env );
 		$b = $this->operands[1]->compile( $env );
 
-		if ( Less_Environment::isMathOn() ) {
+		if ( Less_Environment::isMathOn() && !$this->shouldSkip($a) && !$this->shouldSkip($b) ) {
 
 			if ( $a instanceof Less_Tree_Dimension && $b instanceof Less_Tree_Color ) {
 				$a = $a->toColor();
@@ -41,13 +41,21 @@ class Less_Tree_Operation extends Less_Tree {
 			}
 
 			if ( !method_exists( $a, 'operate' ) ) {
-				throw new Less_Exception_Compiler( "Operation on an invalid type" );
+				throw new Less_Exception_Compiler( "Operation on an invalid type ".get_class($a) );
 			}
 
 			return $a->operate( $this->op, $b );
 		}
 
 		return new Less_Tree_Operation( $this->op, array( $a, $b ), $this->isSpaced );
+	}
+
+	private function shouldSkip(Less_Tree $operand): bool {
+		if ($operand instanceof Less_Tree_Call && $operand->name === 'var') {
+			return true;
+		}
+
+		return false;
 	}
 
 	/**
